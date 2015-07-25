@@ -172,14 +172,14 @@ BeginCmp
 TimeStamp = /556120B1/55650EFF;
 Reference = P201;
 ValeurCmp = P06-MOTOR;
-IdModule  = ;
+IdModule  = kicadlib:JST-S6B-PH-K;
 EndCmp
 
 BeginCmp
 TimeStamp = /556120B1/5565101E;
 Reference = P202;
 ValeurCmp = P06-MOTOR;
-IdModule  = ;
+IdModule  = kicadlib:JST-S6B-PH-K;
 EndCmp
 
 BeginCmp
