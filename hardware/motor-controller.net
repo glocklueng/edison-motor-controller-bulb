@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source /home/jferner/dev/edison-motor-controller-bulb/hardware/motor-controller.sch)
-    (date "Sat 25 Jul 2015 12:25:01 PM EDT")
+    (date "Sat 25 Jul 2015 03:02:49 PM EDT")
     (tool "Eeschema (after 2015-may-25 BZR unknown)-product")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -28,6 +28,9 @@
   (components
     (comp (ref P101)
       (value BATTERY)
+      (footprint kicadlib:TECONN-2-1445098-2)
+      (fields
+        (field (name inventoryId) 486))
       (libsource (lib motor-controller) (part P02))
       (sheetpath (names /) (tstamps /))
       (tstamp 55614EAF))
@@ -41,6 +44,7 @@
       (tstamp 5563AEEC))
     (comp (ref U101)
       (value STM32F030K6T6)
+      (footprint kicadlib:QFP80P900X900X160-32N)
       (fields
         (field (name inventoryId) 635))
       (libsource (lib motor-controller) (part STM32F030K6T6))
@@ -64,6 +68,7 @@
       (tstamp 5563B646))
     (comp (ref U102)
       (value ST-LIS3MDL)
+      (footprint kicadlib:LGA12S50P4X4_192X192X100)
       (fields
         (field (name inventoryId) 636))
       (libsource (lib motor-controller) (part ST-LIS3MDL))
@@ -587,27 +592,11 @@
       (pins
         (pin (num 1) (name ~) (type passive))
         (pin (num 2) (name ~) (type passive))))
-    (libpart (lib motor-controller) (part ST-LIS3MDL)
-      (description "Digital output magnetic sensor")
-      (fields
-        (field (name Reference) U)
-        (field (name Value) ST-LIS3MDL))
-      (pins
-        (pin (num 1) (name SCL/SCK) (type input))
-        (pin (num 2) (name GND) (type power_in))
-        (pin (num 3) (name GND) (type power_in))
-        (pin (num 4) (name C1) (type passive))
-        (pin (num 5) (name Vdd) (type power_in))
-        (pin (num 6) (name VddIO) (type power_in))
-        (pin (num 7) (name INT) (type output))
-        (pin (num 8) (name DRDY) (type output))
-        (pin (num 9) (name SA1/MISO) (type BiDi))
-        (pin (num 10) (name CS) (type input))
-        (pin (num 11) (name SDA/MOSI) (type BiDi))
-        (pin (num 12) (name GND) (type power_in))))
     (libpart (lib motor-controller) (part STM32-32PIN)
       (aliases
         (alias STM32F030K6T6))
+      (footprints
+        (fp QFP80P900X900X160-32N))
       (fields
         (field (name Reference) U)
         (field (name Value) STM32-32PIN))
@@ -675,12 +664,32 @@
         (pin (num 7) (name MOSI) (type input))
         (pin (num 8) (name SCK) (type input))
         (pin (num 9) (name GND) (type power_in))
-        (pin (num 10) (name GND) (type power_out)))))
+        (pin (num 10) (name GND) (type power_out))))
+    (libpart (lib motor-controller) (part ST-LIS3MDL)
+      (description "Digital output magnetic sensor")
+      (footprints
+        (fp LGA12S50P4X4_192X192X100))
+      (fields
+        (field (name Reference) U)
+        (field (name Value) ST-LIS3MDL))
+      (pins
+        (pin (num 1) (name SCL/SCK) (type input))
+        (pin (num 2) (name GND) (type power_in))
+        (pin (num 3) (name GND) (type power_in))
+        (pin (num 4) (name C1) (type passive))
+        (pin (num 5) (name Vdd) (type power_in))
+        (pin (num 6) (name VddIO) (type power_in))
+        (pin (num 7) (name INT) (type output))
+        (pin (num 8) (name DRDY) (type output))
+        (pin (num 9) (name SA1/MISO) (type BiDi))
+        (pin (num 10) (name CS) (type input))
+        (pin (num 11) (name SDA/MOSI) (type BiDi))
+        (pin (num 12) (name GND) (type power_in)))))
   (libraries
-    (library (logical motor-controller-cache)
-      (uri /home/jferner/dev/edison-motor-controller-bulb/hardware/motor-controller-cache.lib))
     (library (logical motor-controller)
-      (uri /home/jferner/dev/edison-motor-controller-bulb/hardware/motor-controller.lib)))
+      (uri /home/jferner/dev/edison-motor-controller-bulb/hardware/motor-controller.lib))
+    (library (logical motor-controller-cache)
+      (uri /home/jferner/dev/edison-motor-controller-bulb/hardware/motor-controller-cache.lib)))
   (nets
     (net (code 1) (name GNDPWR)
       (node (ref R210) (pin 2))

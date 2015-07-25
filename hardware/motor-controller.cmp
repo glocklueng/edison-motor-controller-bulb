@@ -144,7 +144,7 @@ BeginCmp
 TimeStamp = /55614EAF;
 Reference = P101;
 ValeurCmp = BATTERY;
-IdModule  = ;
+IdModule  = kicadlib:TECONN-2-1445098-2;
 EndCmp
 
 BeginCmp
@@ -298,14 +298,14 @@ BeginCmp
 TimeStamp = /5563C8C6;
 Reference = U101;
 ValeurCmp = STM32F030K6T6;
-IdModule  = ;
+IdModule  = kicadlib:QFP80P900X900X160-32N;
 EndCmp
 
 BeginCmp
 TimeStamp = /5564683F;
 Reference = U102;
 ValeurCmp = ST-LIS3MDL;
-IdModule  = ;
+IdModule  = kicadlib:LGA12S50P4X4_192X192X100;
 EndCmp
 
 BeginCmp
