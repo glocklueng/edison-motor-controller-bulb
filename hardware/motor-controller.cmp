@@ -1,0 +1,353 @@
+Cmp-Mod V01 Created by Cvpcb (after 2015-may-01 BZR unknown)-product   date = Thu 28 May 2015 12:36:58 PM EDT
+
+BeginCmp
+TimeStamp = /5565203A;
+Reference = C101;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /55652269;
+Reference = C102;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556522AA;
+Reference = C103;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /55646FF5;
+Reference = C104;
+ValeurCmp = 1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /55647161;
+Reference = C105;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /55646F6B;
+Reference = C106;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55611DBF;
+Reference = C201;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556131F8;
+Reference = C202;
+ValeurCmp = 100uF 35V;
+IdModule  = kicadlib:CAPAE660X790N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144F8;
+Reference = C203;
+ValeurCmp = 100uF 35V;
+IdModule  = kicadlib:CAPAE660X790N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556130CC;
+Reference = C204;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144E0;
+Reference = C205;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561315A;
+Reference = C206;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144E6;
+Reference = C207;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55613196;
+Reference = C208;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144EC;
+Reference = C209;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556131CE;
+Reference = C210;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144F2;
+Reference = C211;
+ValeurCmp = 0.1uF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561281F;
+Reference = C212;
+ValeurCmp = 33nF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561449E;
+Reference = C213;
+ValeurCmp = 33nF 35V;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55657A0D;
+Reference = C214;
+ValeurCmp = 0.1uF;
+IdModule  = kicadlib:CAPC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /55614EAF;
+Reference = P101;
+ValeurCmp = BATTERY;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /5563B646;
+Reference = P102;
+ValeurCmp = SWD;
+IdModule  = kicadlib:HDRV6W66P254_1X6_1524X249X838P;
+EndCmp
+
+BeginCmp
+TimeStamp = /5563AEEC;
+Reference = P103;
+ValeurCmp = ROBOT-P10-IO;
+IdModule  = kicadlib:SHDRV10W66P254_2X5_2286X910X910P;
+EndCmp
+
+BeginCmp
+TimeStamp = /5563B641;
+Reference = P104;
+ValeurCmp = FTDI-PLUG;
+IdModule  = kicadlib:HDRV6W66P254_1X6_1524X249X838P;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55650EFF;
+Reference = P201;
+ValeurCmp = P06-MOTOR;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5565101E;
+Reference = P202;
+ValeurCmp = P06-MOTOR;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /55648972;
+Reference = R101;
+ValeurCmp = 4.7K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /5564871C;
+Reference = R102;
+ValeurCmp = 4.7K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556121A9;
+Reference = R201;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556143D9;
+Reference = R202;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561215F;
+Reference = R203;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556143D3;
+Reference = R204;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556121F9;
+Reference = R205;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556143DF;
+Reference = R206;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556121AE;
+Reference = R207;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561224E;
+Reference = R208;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561444D;
+Reference = R209;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55614457;
+Reference = R210;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55612156;
+Reference = R211;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55614447;
+Reference = R212;
+ValeurCmp = 10K;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55612B3C;
+Reference = R213;
+ValeurCmp = 270R;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556144B3;
+Reference = R214;
+ValeurCmp = 270R;
+IdModule  = kicadlib:RESC2012X100N;
+EndCmp
+
+BeginCmp
+TimeStamp = /5563C8C6;
+Reference = U101;
+ValeurCmp = STM32F030K6T6;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /5564683F;
+Reference = U102;
+ValeurCmp = ST-LIS3MDL;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55611990;
+Reference = U201;
+ValeurCmp = IRLML2803TRPBF;
+IdModule  = kicadlib:SOT95P237X112_123-3N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556143E5;
+Reference = U202;
+ValeurCmp = IRLML2803TRPBF;
+IdModule  = kicadlib:SOT95P237X112_123-3N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/556120BA;
+Reference = U203;
+ValeurCmp = 7408;
+IdModule  = kicadlib:SOIC127P600X175-14N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561206E;
+Reference = U204;
+ValeurCmp = MC33926;
+IdModule  = kicadlib:PQFN80P800X800X220-33N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/5561443D;
+Reference = U205;
+ValeurCmp = MC33926;
+IdModule  = kicadlib:PQFN80P800X800X220-33N;
+EndCmp
+
+BeginCmp
+TimeStamp = /556120B1/55650FBD;
+Reference = U206;
+ValeurCmp = 74AHC541D;
+IdModule  = kicadlib:SOIC127P1032X265-20N;
+EndCmp
+
+EndListe
