@@ -785,4 +785,6 @@ Wire Wire Line
 	4500 1850 4500 1900
 Wire Wire Line
 	4500 2100 4500 2150
+Text Notes 2100 2100 0    60   ~ 0
+5V-28V
 $EndSCHEMATC

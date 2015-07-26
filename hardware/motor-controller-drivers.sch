@@ -1348,4 +1348,12 @@ Text Label 5200 7000 0    60   ~ 0
 MOTORR-
 Text Label 5200 7100 0    60   ~ 0
 MOTORR+
+Text Label 7350 3500 0    60   ~ 0
+MOTORLCHA
+Text Label 7350 3600 0    60   ~ 0
+MOTORLCHB
+Text Label 7350 3700 0    60   ~ 0
+MOTORRCHA
+Text Label 7350 3800 0    60   ~ 0
+MOTORRCHB
 $EndSCHEMATC
