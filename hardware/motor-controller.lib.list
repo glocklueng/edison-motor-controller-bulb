@@ -10,6 +10,8 @@ libs/MECH.lib
 libs/PWR_FLAG.lib
 libs/DIODE.lib
 libs/P02.lib
+libs/P01.lib
+libs/P03.lib
 libs/P06.lib
 libs/P06-MOTOR.lib
 libs/MC33926.lib
