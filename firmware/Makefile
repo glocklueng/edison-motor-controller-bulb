@@ -10,12 +10,12 @@ FEATURES         ?= $(shell cat $(STM32CUBEMX_FILE) | grep Mcu\.IP[0-9]\*= | awk
 LINK_FLASH_START  = 0x08000000
 LINK_RAM_START    = 0x20000000
 
-ifeq ($(DEVICE),STM32F030K6Tx)
+ifeq ($(DEVICE),STM32F051K8Tx)
 DEVICE_FAMILY     = STM32F0xx
-DEVICE_TYPE       = STM32F030x6
+DEVICE_TYPE       = STM32F051x8
 CPU               = -mthumb -mcpu=cortex-m0
-RAM               = 4096
-FLASH             = 32768
+RAM               = 8192
+FLASH             = 65536
 else ifeq ($(DEVICE),STM32L051K8Tx)
 DEVICE_FAMILY     = STM32L0xx
 DEVICE_TYPE       = STM32L051xx
@@ -133,11 +133,12 @@ LIBDIR   = libs
 LIBMKFILES = $(shell find $(LIBDIR) -name \*.mk)
 include $(LIBMKFILES)
 
-INCLUDES  += $(LIBINC) -I$(BUILD_DIR) -I$(LIBDIR)
-CFLAGS    += $(CPU) $(CMSIS_OPT) $(OTHER_OPT) $(USER_CFLAGS) -Wall -fno-common -fno-strict-aliasing $(INCLUDES) -Og -g -gstabs+ -Wfatal-errors
-ASFLAGS   += $(CFLAGS) -x assembler-with-cpp
-LDFLAGS   += -Wl,--gc-sections,-Map=$*.map,-cref -T $(LDSCRIPT) $(CPU)
-ARFLAGS   += cr
+INCLUDES   += $(LIBINC) -I$(BUILD_DIR) -I$(LIBDIR)
+DEBUGFLAGS ?= -Og -g -gstabs+
+CFLAGS     += $(CPU) $(CMSIS_OPT) $(OTHER_OPT) $(USER_CFLAGS) -Wall -fno-common -fno-strict-aliasing $(INCLUDES) $(DEBUGFLAGS) -Wfatal-errors
+ASFLAGS    += $(CFLAGS) -x assembler-with-cpp
+LDFLAGS    += -Wl,--gc-sections,-Map=$*.map,-cref -T $(LDSCRIPT) $(CPU)
+ARFLAGS    += cr
 OBJCOPYFLAGS += -Obinary
 OBJDUMPFLAGS += -S
 
