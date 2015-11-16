@@ -13,7 +13,7 @@ LINK_RAM_START    = 0x20000000
 ifeq ($(DEVICE),STM32F051K8Tx)
 DEVICE_FAMILY     = STM32F0xx
 DEVICE_TYPE       = STM32F051x8
-CPU               = -mthumb -mcpu=cortex-m0
+CPU               = -mthumb -mcpu=cortex-m0 -mfloat-abi=soft
 RAM               = 8192
 FLASH             = 65536
 else ifeq ($(DEVICE),STM32L051K8Tx)
@@ -27,6 +27,12 @@ DEVICE_FAMILY     = STM32F0xx
 DEVICE_TYPE       = STM32F072xB
 CPU               = -mthumb -mcpu=cortex-m0
 RAM               = 16384
+FLASH             = 131072
+else ifeq ($(DEVICE),STM32F103RBTx)
+DEVICE_FAMILY     = STM32F1xx
+DEVICE_TYPE       = STM32F103xB
+CPU               = -mthumb -mcpu=cortex-m3
+RAM               = 20480
 FLASH             = 131072
 else ifeq ($(DEVICE),STM32F103RETx)
 DEVICE_FAMILY     = STM32F1xx
@@ -101,7 +107,8 @@ GIT_HASH := $(shell git rev-parse HEAD)
 GIT_TAG  := $(shell git describe --abbrev=0 --tags)
 
 # general variables
-CMSIS_OPT     = -D$(DEVICE_FAMILY) -D$(DEVICE_TYPE) -DUSE_FULL_ASSERT -DUSE_HAL_DRIVER
+USE_FULL_ASSERT ?= -DUSE_FULL_ASSERT
+CMSIS_OPT     = -D$(DEVICE_FAMILY) -D$(DEVICE_TYPE) $(USE_FULL_ASSERT) -DUSE_HAL_DRIVER
 OTHER_OPT     = "-D__weak=__attribute__((weak))" "-D__packed=__attribute__((__packed__))" 
 SYSTEM        = arm-none-eabi
 
@@ -120,6 +127,7 @@ OBJCOPY = $(SYSTEM)-objcopy
 OBJDUMP = $(SYSTEM)-objdump
 GDB     = $(SYSTEM)-gdb
 SIZE    = $(SYSTEM)-size
+NM      = $(SYSTEM)-nm
 STM32CUBEMX = stm32cubemx
 
 INCLUDES =
@@ -137,7 +145,7 @@ INCLUDES   += $(LIBINC) -I$(BUILD_DIR) -I$(LIBDIR)
 DEBUGFLAGS ?= -Og -g -gstabs+
 CFLAGS     += $(CPU) $(CMSIS_OPT) $(OTHER_OPT) $(USER_CFLAGS) -Wall -fno-common -fno-strict-aliasing $(INCLUDES) $(DEBUGFLAGS) -Wfatal-errors
 ASFLAGS    += $(CFLAGS) -x assembler-with-cpp
-LDFLAGS    += -Wl,--gc-sections,-Map=$*.map,-cref -T $(LDSCRIPT) $(CPU)
+LDFLAGS    += -Wl,--gc-sections,-Map=$*.map,-cref -T $(LDSCRIPT) $(USER_LDFLAGS) $(CPU)
 ARFLAGS    += cr
 OBJCOPYFLAGS += -Obinary
 OBJDUMPFLAGS += -S
@@ -427,7 +435,7 @@ endef
 
 #***********************************************************************
 
-.PHONY: st-util gdb picocom clean erase help
+.PHONY: st-util gdb picocom clean erase nm help
 
 all: $(BIN)
 
@@ -436,7 +444,11 @@ help:
 	@echo "erase     Erase the device"
 	@echo "gdb       Start gdb"
 	@echo "picocom   Start picocom"
+	@echo "nm        Stats about size"
 
+nm: $(BIN)
+	-$(NM) -A -l -C -td --reverse-sort --size-sort build/main.out
+	
 st-util:
 	@echo "Use lsusb then STLINK_DEVICE=<bus>:<device id> for multiple devices"
 	st-util -v

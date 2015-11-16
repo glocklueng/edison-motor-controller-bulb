@@ -1,0 +1,6 @@
+[submodule "firmware/libs/contiki"]
+	path = firmware/libs/contiki
+	url = git@github.com:contiki-os/contiki.git
+[submodule "firmware/libs/utils"]
+	path = firmware/libs/utils
+	url = git@github.com:joeferner/stm32-utils.git
