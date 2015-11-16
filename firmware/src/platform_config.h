@@ -4,6 +4,7 @@
 
 #include <pinout.h>
 
+#define CONTIKI
 #define DEBUG_UART   huart3
 #define SPI          hspi1
 #define MAX_TIMEOUT  0xffff
