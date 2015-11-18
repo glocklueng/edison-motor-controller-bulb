@@ -5,5 +5,6 @@ SRCS = \
 	libs/utils/ringbufferdma.c \
 	libs/utils/syscalls.c \
 	libs/utils/time.c \
-	libs/utils/utils.c
+	libs/utils/utils.c \
+	libs/slre/slre.c
 SSRCS =

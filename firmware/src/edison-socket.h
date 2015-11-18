@@ -5,6 +5,7 @@
 #define EDISON_SOCKET_VERSION 0x01
 
 #define EDISON_SOCKET_CMD_READ_CONFIG  0x01
+#define EDISON_SOCKET_CMD_USER         0x80
 
 typedef struct {
   uint8_t version;

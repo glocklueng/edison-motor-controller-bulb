@@ -4,3 +4,6 @@
 [submodule "firmware/libs/utils"]
 	path = firmware/libs/utils
 	url = git@github.com:joeferner/stm32-utils.git
+[submodule "test-firmware/libs/slre"]
+	path = test-firmware/libs/slre
+	url = git@github.com:cesanta/slre.git
