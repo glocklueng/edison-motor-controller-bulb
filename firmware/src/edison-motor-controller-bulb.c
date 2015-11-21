@@ -15,14 +15,17 @@
 #define SPI_STATE_ERROR            0x04
 #define SPI_STATE_COMPLETE         0x05
 
-void spi_setup();
-void spi_process();
+static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+#define MOTOR_LEFT  0
+#define MOTOR_RIGHT 1
 
 PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
 
 volatile uint8_t lastCommand;
 volatile uint8_t spiState;
+volatile uint8_t lastMotorState[2];
+volatile GPIO_PinState lastSpiCsState;
 
 EdisonSocketConfig edisonSocketConfig = {
   .version = EDISON_SOCKET_VERSION,
@@ -40,19 +43,29 @@ volatile EdisonMotorCommandStatusResponse status = {
 
 EdisonMotorCommandDrive driveCommand;
 
-void processDriveCommand();
+void spi_setup();
+void spi_process();
+void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB);
+void motor_stop();
+void motor_processDriveCommand();
 uint32_t speedToCompareValue(uint16_t speed);
 void spi_clear();
 
 void setup() {
   printf("setup\n");
 
+  lastCommand = EDISON_SOCKET_CMD_NOT_SET;
+  spiState = SPI_STATE_COMPLETE;
+  lastMotorState[MOTOR_LEFT] = 0;
+  lastMotorState[MOTOR_RIGHT] = 0;
+  lastSpiCsState = GPIO_PIN_SET;
+
   //HAL_IWDG_Start(&hiwdg);
 
   process_init();
   process_start(&etimer_process, NULL);
   //process_start(&watchdog_reset, NULL);
-  //process_start(&compass_update, NULL);
+  process_start(&compass_update, NULL);
 
   debug_setup();
   printf("setup complete\n");
@@ -71,18 +84,25 @@ void spi_clear() {
 void HAL_GPIO_EXTI_Callback(uint16_t pin) {
   if (pin == PIN_SPI1_CS_PIN) {
     GPIO_PinState pinState = HAL_GPIO_ReadPin(PIN_SPI1_CS_PORT, PIN_SPI1_CS_PIN);
-    if (pinState == GPIO_PIN_RESET) {
-      if (spiState == SPI_STATE_COMPLETE) {
-        spi_clear();
-        spiState = SPI_STATE_RX_COMMAND;
-        lastCommand = 0x00;
-        HAL_SPI_Receive_DMA(&SPI, (uint8_t*)&lastCommand, 1);
-      }
+    if (pinState == GPIO_PIN_RESET && lastSpiCsState == GPIO_PIN_SET) {
+      spi_clear();
+      spiState = SPI_STATE_RX_COMMAND;
+      lastCommand = 0x00;
+      HAL_SPI_Receive_DMA(&SPI, (uint8_t*)&lastCommand, 1);
     } else if (pinState == GPIO_PIN_SET) {
       spiState = SPI_STATE_COMPLETE;
       HAL_SPI_DMAStop(&SPI);
       spi_clear();
     }
+    lastSpiCsState = pinState;
+  } else if (pin == PIN_MOTORLCHA_PIN || pin == PIN_MOTORLCHB_PIN) {
+    GPIO_PinState pinStateA = HAL_GPIO_ReadPin(PIN_MOTORLCHA_PORT, PIN_MOTORLCHA_PIN);
+    GPIO_PinState pinStateB = HAL_GPIO_ReadPin(PIN_MOTORLCHB_PORT, PIN_MOTORLCHB_PIN);
+    motor_processPinChange(MOTOR_LEFT, pinStateA, pinStateB);
+  } else if (pin == PIN_MOTORRCHA_PIN || pin == PIN_MOTORRCHB_PIN) {
+    GPIO_PinState pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
+    GPIO_PinState pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
+    motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
   }
 }
 
@@ -96,6 +116,15 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi) {
   spi_process();
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
+  spiState = SPI_STATE_ERROR;
+  printf("HAL_SPI_ErrorCallback 0x%08lx\n", HAL_SPI_GetError(hspi));
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
+  printf("HAL_UART_ErrorCallback 0x%08lx\n", HAL_UART_GetError(huart));
 }
 
 void spi_process() {
@@ -116,7 +145,7 @@ void spi_process() {
   } else if (spiState == SPI_STATE_RX_DATA) {
     if (lastCommand == EDISON_MOTOR_CMD_DRIVE) {
       spiState = SPI_STATE_COMPLETE;
-      processDriveCommand();
+      motor_processDriveCommand();
     } else {
       spiState = SPI_STATE_ERROR;
       printf("SPI: unknown state RX command data 0x%02x\n", lastCommand);
@@ -138,32 +167,58 @@ void spi_process() {
   }
 }
 
-void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
-  spiState = SPI_STATE_ERROR;
-  printf("HAL_SPI_ErrorCallback 0x%08lx\n", HAL_SPI_GetError(hspi));
+void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB) {
+  volatile uint16_t* statusDistance = (motor == MOTOR_LEFT) ? &(status.distanceLeft) : &(status.distanceRight);
+  uint8_t newState = (chA == GPIO_PIN_SET ? 0b10 : 0b00) | (chB == GPIO_PIN_SET ? 0b01 : 0b00);
+
+  // nothing changed
+  if ((lastMotorState[motor] & 0b0011) == newState) {
+    return;
+  }
+
+  newState = ((lastMotorState[motor] << 2) | newState) & 0b1111;
+  if (*statusDistance != EDISON_MOTOR_DISTANCE_NOT_SET && *statusDistance-- > 0) {
+    int8_t move = ENCODER_STATES[newState];
+    if (move != 0) {
+      *statusDistance--;
+      if (*statusDistance == 0) {
+        motor_stop();
+      }
+    }
+  }
+  lastMotorState[motor] = newState;
 }
 
-void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
-  printf("HAL_UART_ErrorCallback 0x%08lx\n", HAL_UART_GetError(huart));
+void motor_stop() {
+  HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_RESET);
+  HAL_TIM_PWM_Stop(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
+  HAL_TIM_PWM_Stop(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+  printf("motor_stop\n");
 }
 
-void processDriveCommand() {
-  __HAL_TIM_SET_COMPARE(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
-  __HAL_TIM_SET_COMPARE(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
-
+void motor_processDriveCommand() {
   status.speedLeft = driveCommand.speedLeft;
   status.distanceLeft = driveCommand.distanceLeft;
   status.speedRight = driveCommand.speedRight;
   status.distanceRight = driveCommand.distanceRight;
   status.targetHeading = driveCommand.targetHeading;
+
+  HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+  __HAL_TIM_SET_COMPARE(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
+  __HAL_TIM_SET_COMPARE(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
+
+  HAL_TIM_PWM_Start(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
+  HAL_TIM_PWM_Start(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+
+  HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_SET);
+
   printf("speedLeft: %d\n", driveCommand.speedLeft);
   printf("distanceLeft: %d\n", driveCommand.distanceLeft);
   printf("speedRight: %d\n", driveCommand.speedRight);
   printf("distanceRight: %d\n", driveCommand.distanceRight);
   printf("targetHeading: %d\n", driveCommand.targetHeading);
-
-  HAL_TIM_PWM_Start(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
-  HAL_TIM_PWM_Start(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
 }
 
 uint32_t speedToCompareValue(uint16_t speed) {
@@ -216,4 +271,5 @@ PROCESS_THREAD(compass_update, ev, data) {
 
   PROCESS_END();
 }
+
 
