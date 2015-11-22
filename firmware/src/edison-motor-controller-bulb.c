@@ -5,8 +5,11 @@
 #include <string.h>
 #include "platform_config.h"
 #include <utils/debug.h>
+#include <utils/utils.h>
+#include <utils/trig_int16.h>
 #include <contiki/core/sys/process.h>
 #include <contiki/core/sys/etimer.h>
+#include <lis3mdl/lis3mdl.h>
 #include "edison-motor-controller-bulb.h"
 
 #define SPI_STATE_RX_COMMAND       0x01
@@ -21,6 +24,8 @@ static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0
 
 PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
+
+LIS3MDL compass;
 
 volatile uint8_t lastCommand;
 volatile uint8_t spiState;
@@ -50,6 +55,7 @@ void motor_stop();
 void motor_processDriveCommand();
 uint32_t speedToCompareValue(uint16_t speed);
 void spi_clear();
+HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading);
 
 void setup() {
   printf("setup\n");
@@ -61,6 +67,13 @@ void setup() {
   lastSpiCsState = GPIO_PIN_SET;
 
   //HAL_IWDG_Start(&hiwdg);
+  LIS3MDL_setup(&compass, &hi2c1, LIS3MDL_ADDRESS1);
+  LIS3MDL_reset(&compass);
+  LIS3MDL_enableTemperature(&compass, false);
+  LIS3MDL_setPerformance(&compass, LIS3MDL_PERFORMANCE_HIGH);
+  LIS3MDL_setDateRate(&compass, LIS3MDL_DATA_RATE_80_HZ);
+  LIS3MDL_setScale(&compass, LIS3MDL_SCALE_4_GAUSS);
+  LIS3MDL_setMode(&compass, LIS3MDL_MODE_CONTINUOUS);
 
   process_init();
   process_start(&etimer_process, NULL);
@@ -259,17 +272,52 @@ PROCESS_THREAD(watchdog_reset, ev, data) {
 
 PROCESS_THREAD(compass_update, ev, data) {
   static struct etimer et;
+  HAL_StatusTypeDef s;
+  uint16_t heading;
+  uint8_t compassStatus;
 
   PROCESS_BEGIN();
 
   while (1) {
     etimer_set(&et, COMPASS_TIMER_MS);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-    // TODO update compass
-    // status.heading = 0;
+
+    s = LIS3MDL_readStatus(&compass, &compassStatus);
+    if (s != HAL_OK) {
+      printf("could not read compass status: %d\n", s);
+      continue;
+    }
+    if (testBits(compassStatus, LIS3MDL_STATUS_ZYXDA)) {
+      s = compass_readXYHeading(&heading);
+      if (s != HAL_OK) {
+        printf("could not read XY heading: %d\n", s);
+        continue;
+      }
+      status.heading = heading;
+      printf("heading: %d\n", status.heading);
+    }
   }
 
   PROCESS_END();
+}
+
+HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
+  HAL_StatusTypeDef status;
+  int16_t x, y;
+
+  status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_X, &x);
+  if (status != HAL_OK) {
+    return status;
+  }
+
+  status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_Y, &y);
+  if (status != HAL_OK) {
+    return status;
+  }
+
+  *heading = trig_int16_atan2deg(y, x);
+
+  return HAL_OK;
 }
 
 

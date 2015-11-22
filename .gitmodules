@@ -7,3 +7,6 @@
 [submodule "test-firmware/libs/slre"]
 	path = test-firmware/libs/slre
 	url = git@github.com:cesanta/slre.git
+[submodule "firmware/libs/lis3mdl"]
+	path = firmware/libs/lis3mdl
+	url = git@github.com:joeferner/stm32-st-lis3mdl.git
