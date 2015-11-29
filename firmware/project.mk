@@ -1,7 +1,7 @@
 #DEBUGFLAGS      = -Os
-#USER_LDFLAGS    = --specs=nano.specs
+USER_LDFLAGS    = --specs=nano.specs
 USER_CFLAGS     = -DDEBUG_LIS3MDL -DCONTIKI -Ilibs/contiki/core -Ilibs/contiki/core/net/
-#USE_FULL_ASSERT =
+USE_FULL_ASSERT =
 SRCS = \
 	src/edison-motor-controller-bulb.c \
 	libs/contiki/core/sys/process.c \
