@@ -22,7 +22,7 @@ static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0
 #define MOTOR_LEFT  0
 #define MOTOR_RIGHT 1
 
-PROCESS(watchdog_reset, "Watchdog Reset");
+//PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
 
 LIS3MDL compass;
@@ -89,6 +89,7 @@ void loop() {
   process_run();
 }
 
+/*
 void spi_clear() {
   uint8_t temp[10];
   while (HAL_SPI_Receive(&SPI, temp, 10, 0) == HAL_OK);
@@ -135,11 +136,11 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
   spiState = SPI_STATE_ERROR;
   printf("HAL_SPI_ErrorCallback 0x%08lx\n", HAL_SPI_GetError(hspi));
 }
-
+*/
 void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
   printf("HAL_UART_ErrorCallback 0x%08lx\n", HAL_UART_GetError(huart));
 }
-
+/*
 void spi_process() {
   if (spiState == SPI_STATE_RX_COMMAND) {
     if (lastCommand == EDISON_SOCKET_CMD_READ_CONFIG) {
@@ -237,7 +238,7 @@ void motor_processDriveCommand() {
 uint32_t speedToCompareValue(uint16_t speed) {
   return speed * 2;
 }
-
+*/
 void debug_processLine(const char* line) {
   if (strlen(line) == 0) {
   } else if (strcmp(line, "testiwdg") == 0) {
@@ -255,7 +256,7 @@ void debug_processLine(const char* line) {
   }
   printf("> ");
 }
-
+/*
 PROCESS_THREAD(watchdog_reset, ev, data) {
   static struct etimer et;
 
@@ -269,7 +270,7 @@ PROCESS_THREAD(watchdog_reset, ev, data) {
 
   PROCESS_END();
 }
-
+*/
 PROCESS_THREAD(compass_update, ev, data) {
   static struct etimer et;
   HAL_StatusTypeDef s;
@@ -303,7 +304,7 @@ PROCESS_THREAD(compass_update, ev, data) {
 
 HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
   HAL_StatusTypeDef status;
-  int16_t x, y;
+  int16_t x, y, z;
 
   status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_X, &x);
   if (status != HAL_OK) {
@@ -315,7 +316,13 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
     return status;
   }
 
+  status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_Z, &z);
+  if (status != HAL_OK) {
+    return status;
+  }
+
   *heading = trig_int16_atan2deg(y, x);
+  printf("compass_readXYHeading: %d, %d, %d = %d\n", x, y, z, *heading);
 
   return HAL_OK;
 }

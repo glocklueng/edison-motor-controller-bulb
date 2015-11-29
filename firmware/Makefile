@@ -83,7 +83,9 @@ ifneq (,$(findstring SPI,$(FEATURES)))
 endif
 
 ifneq (,$(findstring USART,$(FEATURES)))
-	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart.c
+	SRCS += \
+		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart.c \
+		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart_ex.c
 endif
 
 ifneq (,$(findstring IWDG,$(FEATURES)))
