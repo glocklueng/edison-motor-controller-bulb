@@ -56,6 +56,7 @@ void motor_processDriveCommand();
 uint32_t speedToCompareValue(uint16_t speed);
 void spi_clear();
 HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading);
+int16_t compass_scale(int32_t value, int32_t min, int32_t max);
 
 void setup() {
   printf("setup\n");
@@ -295,7 +296,7 @@ PROCESS_THREAD(compass_update, ev, data) {
         continue;
       }
       status.heading = heading;
-      printf("heading: %d\n", status.heading);
+      //printf("heading: %d\n", status.heading);
     }
   }
 
@@ -304,7 +305,8 @@ PROCESS_THREAD(compass_update, ev, data) {
 
 HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
   HAL_StatusTypeDef status;
-  int16_t x, y, z;
+  int16_t x, y;
+  int16_t scaledX, scaledY;
 
   status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_X, &x);
   if (status != HAL_OK) {
@@ -316,15 +318,17 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
     return status;
   }
 
-  status = LIS3MDL_readAxis(&compass, LIS3MDL_AXIS_Z, &z);
-  if (status != HAL_OK) {
-    return status;
-  }
-
-  *heading = trig_int16_atan2deg(y, x);
-  printf("compass_readXYHeading: %d, %d, %d = %d\n", x, y, z, *heading);
+  scaledX = compass_scale(x, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X]);
+  scaledY = compass_scale(y, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y]);
+  
+  *heading = 360 - trig_int16_atan2deg(scaledY, scaledX);
+  printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
 
   return HAL_OK;
 }
 
-
+int16_t compass_scale(int32_t value, int32_t min, int32_t max) {
+  value = value - ((max + min) / 2); // center around mid point
+  value = value * (20000 / (max - min)); // scale from -10000 to 10000
+  return value;
+}
