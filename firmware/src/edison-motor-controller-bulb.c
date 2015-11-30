@@ -2,6 +2,7 @@
 #include <version.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include "platform_config.h"
 #include <utils/debug.h>
@@ -31,6 +32,12 @@ volatile uint8_t lastCommand;
 volatile uint8_t spiState;
 volatile uint8_t lastMotorState[2];
 volatile GPIO_PinState lastSpiCsState;
+
+int16_t debug_speedLeft;
+int16_t debug_speedRight;
+uint16_t debug_distanceLeft;
+uint16_t debug_distanceRight;
+uint16_t debug_targetHeading;
 
 EdisonSocketConfig edisonSocketConfig = {
   .version = EDISON_SOCKET_VERSION,
@@ -67,6 +74,12 @@ void setup() {
   lastMotorState[MOTOR_RIGHT] = 0;
   lastSpiCsState = GPIO_PIN_SET;
 
+  debug_speedLeft = 100;
+  debug_speedRight = 100;
+  debug_distanceLeft = 10;
+  debug_distanceRight = 10;
+  debug_targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET;
+  
   //HAL_IWDG_Start(&hiwdg);
   LIS3MDL_setup(&compass, &hi2c1, LIS3MDL_ADDRESS1);
   LIS3MDL_reset(&compass);
@@ -181,7 +194,7 @@ void spi_process() {
     spiState = SPI_STATE_ERROR;
   }
 }
-
+*/
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB) {
   volatile uint16_t* statusDistance = (motor == MOTOR_LEFT) ? &(status.distanceLeft) : &(status.distanceRight);
   uint8_t newState = (chA == GPIO_PIN_SET ? 0b10 : 0b00) | (chB == GPIO_PIN_SET ? 0b01 : 0b00);
@@ -206,8 +219,14 @@ void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB)
 
 void motor_stop() {
   HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_RESET);
-  HAL_TIM_PWM_Stop(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
-  HAL_TIM_PWM_Stop(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+  HAL_TIM_Base_Stop_IT(MOTOR_LEFT_PWM_HANDLE);
+  HAL_TIM_OC_Stop_IT(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
+  HAL_TIM_OC_Stop_IT(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+  driveCommand.speedLeft = 0;
+  driveCommand.distanceLeft = EDISON_MOTOR_DISTANCE_NOT_SET;
+  driveCommand.speedRight = 0;
+  driveCommand.distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET;
+  driveCommand.targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET;
   printf("motor_stop\n");
 }
 
@@ -221,11 +240,12 @@ void motor_processDriveCommand() {
   HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-  __HAL_TIM_SET_COMPARE(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
-  __HAL_TIM_SET_COMPARE(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
+  __HAL_TIM_SetCompare(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
+  __HAL_TIM_SetCompare(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
 
-  HAL_TIM_PWM_Start(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
-  HAL_TIM_PWM_Start(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+  HAL_TIM_Base_Start_IT(MOTOR_LEFT_PWM_HANDLE);
+  HAL_TIM_OC_Start_IT(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
+  HAL_TIM_OC_Start_IT(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
 
   HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_SET);
 
@@ -236,10 +256,23 @@ void motor_processDriveCommand() {
   printf("targetHeading: %d\n", driveCommand.targetHeading);
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  HAL_GPIO_WritePin(PIN_MOTORLPWM_PORT, PIN_MOTORLPWM_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(PIN_MOTORRPWM_PORT, PIN_MOTORRPWM_PIN, GPIO_PIN_SET);
+}
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+  if(htim->Channel == MOTOR_LEFT_PWM_IT_CHANNEL) {
+    HAL_GPIO_WritePin(PIN_MOTORLPWM_PORT, PIN_MOTORLPWM_PIN, GPIO_PIN_RESET);
+  } else if(htim->Channel == MOTOR_RIGHT_PWM_IT_CHANNEL) {
+    HAL_GPIO_WritePin(PIN_MOTORRPWM_PORT, PIN_MOTORRPWM_PIN, GPIO_PIN_RESET);
+  }
+}
+
 uint32_t speedToCompareValue(uint16_t speed) {
   return speed * 2;
 }
-*/
+
 void debug_processLine(const char* line) {
   if (strlen(line) == 0) {
   } else if (strcmp(line, "testiwdg") == 0) {
@@ -252,6 +285,23 @@ void debug_processLine(const char* line) {
     printf("distanceLeft: %d\n", status.distanceLeft);
     printf("speedRight: %d\n", status.speedRight);
     printf("distanceRight: %d\n", status.distanceRight);
+  } else if (strcmp(line, "s") == 0 || strcmp(line, "stop") == 0) {
+    motor_stop();
+  } else if (strncmp(line, "sl", 2) == 0) {
+    debug_speedLeft = atoi(line + 2);
+  } else if (strncmp(line, "sr", 2) == 0) {
+    debug_speedRight = atoi(line + 2);
+  } else if (strncmp(line, "dl", 2) == 0) {
+    debug_distanceLeft = atoi(line + 2);
+  } else if (strncmp(line, "dr", 2) == 0) {
+    debug_distanceRight = atoi(line + 2);
+  } else if (strcmp(line, "d") == 0 || strcmp(line, "drive") == 0) {
+    driveCommand.speedLeft = debug_speedLeft;
+    driveCommand.distanceLeft = debug_distanceLeft;
+    driveCommand.speedRight = debug_speedRight;
+    driveCommand.distanceRight = debug_distanceRight;
+    driveCommand.targetHeading = debug_targetHeading;
+    motor_processDriveCommand();
   } else {
     printf("invalid debug command: %s\n", line);
   }
@@ -322,7 +372,7 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
   scaledY = compass_scale(y, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y]);
   
   *heading = 360 - trig_int16_atan2deg(scaledY, scaledX);
-  printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
+  //printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
 
   return HAL_OK;
 }
