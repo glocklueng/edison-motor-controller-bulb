@@ -25,6 +25,7 @@ static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0
 
 //PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
+PROCESS(motor_update, "Motor Update");
 
 LIS3MDL compass;
 
@@ -57,7 +58,6 @@ EdisonMotorCommandDrive driveCommand;
 
 void spi_setup();
 void spi_process();
-void motor_loop();
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB);
 void motor_stop();
 void motor_processDriveCommand();
@@ -94,6 +94,7 @@ void setup() {
   process_start(&etimer_process, NULL);
   //process_start(&watchdog_reset, NULL);
   process_start(&compass_update, NULL);
+  process_start(&motor_update, NULL);
 
   debug_setup();
   printf("setup complete\n");
@@ -102,19 +103,6 @@ void setup() {
 
 void loop() {
   process_run();
-  motor_loop();
-}
-
-void motor_loop() {
-  GPIO_PinState pinStateA, pinStateB;
-  
-  pinStateA = HAL_GPIO_ReadPin(PIN_MOTORLCHA_PORT, PIN_MOTORLCHA_PIN);
-  pinStateB = HAL_GPIO_ReadPin(PIN_MOTORLCHB_PORT, PIN_MOTORLCHB_PIN);
-  motor_processPinChange(MOTOR_LEFT, pinStateA, pinStateB);
-
-  pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
-  pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
-  motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t pin) {
@@ -202,6 +190,27 @@ void spi_process() {
   }
 }
 */
+
+PROCESS_THREAD(motor_update, ev, data) {
+  GPIO_PinState pinStateA, pinStateB;
+
+  PROCESS_BEGIN();
+
+  while (1) {
+    pinStateA = HAL_GPIO_ReadPin(PIN_MOTORLCHA_PORT, PIN_MOTORLCHA_PIN);
+    pinStateB = HAL_GPIO_ReadPin(PIN_MOTORLCHB_PORT, PIN_MOTORLCHB_PIN);
+    motor_processPinChange(MOTOR_LEFT, pinStateA, pinStateB);
+
+    pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
+    pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
+    motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
+    
+    PROCESS_PAUSE();
+  }
+
+  PROCESS_END();
+}
+
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB) {
   uint16_t statusDistance = (motor == MOTOR_LEFT) ? status.distanceLeft : status.distanceRight;
   uint8_t newState = (chA == GPIO_PIN_SET ? 0b10 : 0b00) | (chB == GPIO_PIN_SET ? 0b01 : 0b00);
