@@ -57,10 +57,11 @@ EdisonMotorCommandDrive driveCommand;
 
 void spi_setup();
 void spi_process();
+void motor_loop();
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB);
 void motor_stop();
 void motor_processDriveCommand();
-uint32_t speedToCompareValue(uint16_t speed);
+uint32_t speedToCompareValue(int16_t speed);
 void spi_clear();
 HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading);
 int16_t compass_scale(int32_t value, int32_t min, int32_t max);
@@ -76,8 +77,8 @@ void setup() {
 
   debug_speedLeft = 100;
   debug_speedRight = 100;
-  debug_distanceLeft = 10;
-  debug_distanceRight = 10;
+  debug_distanceLeft = 200;
+  debug_distanceRight = 200;
   debug_targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET;
   
   //HAL_IWDG_Start(&hiwdg);
@@ -101,15 +102,23 @@ void setup() {
 
 void loop() {
   process_run();
+  motor_loop();
 }
 
-/*
-void spi_clear() {
-  uint8_t temp[10];
-  while (HAL_SPI_Receive(&SPI, temp, 10, 0) == HAL_OK);
+void motor_loop() {
+  GPIO_PinState pinStateA, pinStateB;
+  
+  pinStateA = HAL_GPIO_ReadPin(PIN_MOTORLCHA_PORT, PIN_MOTORLCHA_PIN);
+  pinStateB = HAL_GPIO_ReadPin(PIN_MOTORLCHB_PORT, PIN_MOTORLCHB_PIN);
+  motor_processPinChange(MOTOR_LEFT, pinStateA, pinStateB);
+
+  pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
+  pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
+  motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t pin) {
+  /*
   if (pin == PIN_SPI1_CS_PIN) {
     GPIO_PinState pinState = HAL_GPIO_ReadPin(PIN_SPI1_CS_PORT, PIN_SPI1_CS_PIN);
     if (pinState == GPIO_PIN_RESET && lastSpiCsState == GPIO_PIN_SET) {
@@ -123,15 +132,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin) {
       spi_clear();
     }
     lastSpiCsState = pinState;
-  } else if (pin == PIN_MOTORLCHA_PIN || pin == PIN_MOTORLCHB_PIN) {
-    GPIO_PinState pinStateA = HAL_GPIO_ReadPin(PIN_MOTORLCHA_PORT, PIN_MOTORLCHA_PIN);
-    GPIO_PinState pinStateB = HAL_GPIO_ReadPin(PIN_MOTORLCHB_PORT, PIN_MOTORLCHB_PIN);
-    motor_processPinChange(MOTOR_LEFT, pinStateA, pinStateB);
-  } else if (pin == PIN_MOTORRCHA_PIN || pin == PIN_MOTORRCHB_PIN) {
-    GPIO_PinState pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
-    GPIO_PinState pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
-    motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
-  }
+  }*/
+}
+
+/*
+void spi_clear() {
+  uint8_t temp[10];
+  while (HAL_SPI_Receive(&SPI, temp, 10, 0) == HAL_OK);
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi) {
@@ -196,7 +203,7 @@ void spi_process() {
 }
 */
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB) {
-  volatile uint16_t* statusDistance = (motor == MOTOR_LEFT) ? &(status.distanceLeft) : &(status.distanceRight);
+  uint16_t statusDistance = (motor == MOTOR_LEFT) ? status.distanceLeft : status.distanceRight;
   uint8_t newState = (chA == GPIO_PIN_SET ? 0b10 : 0b00) | (chB == GPIO_PIN_SET ? 0b01 : 0b00);
 
   // nothing changed
@@ -205,11 +212,16 @@ void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB)
   }
 
   newState = ((lastMotorState[motor] << 2) | newState) & 0b1111;
-  if (*statusDistance != EDISON_MOTOR_DISTANCE_NOT_SET && *statusDistance-- > 0) {
+  if (statusDistance != EDISON_MOTOR_DISTANCE_NOT_SET && statusDistance > 0) {
     int8_t move = ENCODER_STATES[newState];
     if (move != 0) {
-      *statusDistance--;
-      if (*statusDistance == 0) {
+      statusDistance--;
+      if(motor == MOTOR_LEFT) {
+	status.distanceLeft = statusDistance;
+      }else{
+	status.distanceRight = statusDistance;
+      }
+      if (statusDistance == 0) {
         motor_stop();
       }
     }
@@ -269,7 +281,10 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
   }
 }
 
-uint32_t speedToCompareValue(uint16_t speed) {
+uint32_t speedToCompareValue(int16_t speed) {
+  if (speed < 0) {
+    speed = -speed;
+  }
   return speed * 2;
 }
 
@@ -382,3 +397,4 @@ int16_t compass_scale(int32_t value, int32_t min, int32_t max) {
   value = value * (20000 / (max - min)); // scale from -10000 to 10000
   return value;
 }
+
