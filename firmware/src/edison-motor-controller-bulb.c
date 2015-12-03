@@ -68,6 +68,8 @@ int16_t compass_scale(int32_t value, int32_t min, int32_t max);
 
 void setup() {
   printf("setup\n");
+  
+  HAL_SPI_DMAStop(&SPI);
 
   lastCommand = EDISON_SOCKET_CMD_NOT_SET;
   spiState = SPI_STATE_COMPLETE;
@@ -106,9 +108,8 @@ void loop() {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t pin) {
-  /*
-  if (pin == PIN_SPI1_CS_PIN) {
-    GPIO_PinState pinState = HAL_GPIO_ReadPin(PIN_SPI1_CS_PORT, PIN_SPI1_CS_PIN);
+  if (pin == PIN_SPICS_PIN) {
+    GPIO_PinState pinState = HAL_GPIO_ReadPin(PIN_SPICS_PORT, PIN_SPICS_PIN);
     if (pinState == GPIO_PIN_RESET && lastSpiCsState == GPIO_PIN_SET) {
       spi_clear();
       spiState = SPI_STATE_RX_COMMAND;
@@ -120,10 +121,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin) {
       spi_clear();
     }
     lastSpiCsState = pinState;
-  }*/
+  }
 }
 
-/*
 void spi_clear() {
   uint8_t temp[10];
   while (HAL_SPI_Receive(&SPI, temp, 10, 0) == HAL_OK);
@@ -143,13 +143,13 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi) {
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
   spiState = SPI_STATE_ERROR;
-  printf("HAL_SPI_ErrorCallback 0x%08lx\n", HAL_SPI_GetError(hspi));
+  printf("HAL_SPI_ErrorCallback 0x%02x\n", (uint8_t)HAL_SPI_GetError(hspi));
 }
-*/
+
 void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
-  printf("HAL_UART_ErrorCallback 0x%08lx\n", HAL_UART_GetError(huart));
+  printf("HAL_UART_ErrorCallback 0x%02x\n", (uint8_t)HAL_UART_GetError(huart));
 }
-/*
+
 void spi_process() {
   if (spiState == SPI_STATE_RX_COMMAND) {
     if (lastCommand == EDISON_SOCKET_CMD_READ_CONFIG) {
@@ -189,7 +189,6 @@ void spi_process() {
     spiState = SPI_STATE_ERROR;
   }
 }
-*/
 
 PROCESS_THREAD(motor_update, ev, data) {
   GPIO_PinState pinStateA, pinStateB;

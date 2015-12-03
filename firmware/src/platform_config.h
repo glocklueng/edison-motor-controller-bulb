@@ -18,7 +18,7 @@
 
 extern UART_HandleTypeDef huart2;
 //extern IWDG_HandleTypeDef hiwdg;
-//extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim2;
 extern I2C_HandleTypeDef hi2c1;
 
