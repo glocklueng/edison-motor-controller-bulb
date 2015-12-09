@@ -75,9 +75,8 @@ SSRCS += $(BUILD_DIR)/$(CMSIS_DEVSUP)Source/Templates/gcc/startup_$(STARTUP_FILE
 
 # Add features source files
 ifneq (,$(findstring ADC,$(FEATURES)))
-	SRCS += \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_adc.c \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_adc_ex.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_adc.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_adc_ex.c
 endif
 
 ifneq (,$(findstring SPI,$(FEATURES)))
@@ -85,9 +84,8 @@ ifneq (,$(findstring SPI,$(FEATURES)))
 endif
 
 ifneq (,$(findstring USART,$(FEATURES)))
-	SRCS += \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart.c \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart_ex.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_uart_ex.c
 endif
 
 ifneq (,$(findstring IWDG,$(FEATURES)))
@@ -95,19 +93,18 @@ ifneq (,$(findstring IWDG,$(FEATURES)))
 endif
 
 ifneq (,$(findstring TIM,$(FEATURES)))
-	SRCS += \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_tim.c \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_tim_ex.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_tim.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_tim_ex.c
 endif
 
 ifneq (,$(findstring I2C,$(FEATURES)))
-	SRCS += \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_i2c.c \
-		$(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_i2c_ex.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_i2c.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_i2c_ex.c
 endif
 
 ifneq (,$(findstring FLASH,$(FEATURES)))
 	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_flash.c
+	SRCS += $(BUILD_DIR)/Drivers/$(DEVICE_FAMILY)_HAL_Driver/Src/$(DEVICE_FAMILYL)_hal_flash_ex.c
 endif
 
 # Variables for version.h
