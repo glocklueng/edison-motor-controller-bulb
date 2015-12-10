@@ -1,5 +1,6 @@
 #include <pinout.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stm32l0xx_hal_flash.h>
@@ -29,6 +30,7 @@ FlashHeader flashHeader;
 uint8_t buffer[FLASH_PAGE_SIZE];
 uint8_t spiState;
 uint32_t pageAddr;
+bool txRxComplete;
 
 void jumpToUserCode();
 void assertIrq();
@@ -42,30 +44,29 @@ void eraseProgramMemory();
 void setup() {
   deassertIrq();
 
-  while (HAL_GPIO_ReadPin(PIN_SPICS_PORT, PIN_SPICS_PIN) != GPIO_PIN_RESET);
+  // If CS is not deasserted (LOW) when we boot just jump to user code
+  if (HAL_GPIO_ReadPin(PIN_SPICS_PORT, PIN_SPICS_PIN) != GPIO_PIN_RESET) {
+    jumpToUserCode();
+    return;
+  }
 
   spiState = SPI_STATE_RECV_HEADER;
   uint8_t* rxData = (uint8_t*)&flashHeader;
   memset(rxData, 0, sizeof(FlashHeader));
+  txRxComplete = false;
   if (HAL_SPI_TransmitReceive_DMA(SPI, rxData, rxData, sizeof(FlashHeader)) != HAL_OK) {
     while (1);
   }
 }
 
 void loop() {
-  while (1);
-}
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi) {
-  spi_process();
-}
-
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi) {
-  spi_process();
+  if (txRxComplete) {
+    spi_process();
+  }
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi) {
-  spi_process();
+  txRxComplete = true;
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
@@ -91,6 +92,10 @@ void spi_process() {
     spi_flashPage();
     spi_beginReceiveStartPage();
     break;
+    
+  default:
+    while(1);
+    break;
   }
 }
 
@@ -114,6 +119,7 @@ void eraseProgramMemory() {
 void spi_beginReceiveStartPage() {
   spiState = SPI_STATE_RECEIVE_START_PAGE;
   *((uint32_t*)buffer) = pageAddr;
+  txRxComplete = false;
   if (HAL_SPI_TransmitReceive_DMA(SPI, buffer, buffer, 4) != HAL_OK) {
     while (1);
   }
@@ -123,6 +129,7 @@ void spi_beginReceiveStartPage() {
 void spi_beginReceivePage() {
   spiState = SPI_STATE_RECEIVE_PAGE;
   memset(buffer, 0, FLASH_PAGE_SIZE);
+  txRxComplete = false;
   if (HAL_SPI_TransmitReceive_DMA(SPI, buffer, buffer, FLASH_PAGE_SIZE) != HAL_OK) {
     while (1);
   }
@@ -148,13 +155,13 @@ void deassertIrq() {
 }
 
 void jumpToUserCode() {
-  typedef void (*funcPtr)(void);
-
-  uint32_t jumpAddr = *(uint32_t*)(APP_ADDRESS + 0x04);  /* reset ptr in vector table */
-  funcPtr usrMain = (funcPtr) jumpAddr;
+  typedef void (*funcEntryPtr)(void);
+  uint32_t jumpAddr = *(volatile uint32_t*)(APP_ADDRESS + 0x04);
+  funcEntryPtr usrMain = (funcEntryPtr) jumpAddr;
 
   HAL_FLASH_Lock();
+  __set_PRIMASK(1);
+  HAL_RCC_DeInit();
   __set_MSP(*(uint32_t*) APP_ADDRESS);
-
   usrMain();
 }

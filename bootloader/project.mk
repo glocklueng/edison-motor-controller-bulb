@@ -6,3 +6,4 @@ FEATURES        += FLASH
 SRCS = \
 	src/edison-motor-controller-bootloader.c 
 SSRCS =
+FLASH = 12288

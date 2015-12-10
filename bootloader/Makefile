@@ -9,45 +9,45 @@ STM32CUBEMX_FILE ?= $(shell ls *.ioc)
 DEVICE           ?= $(shell cat $(STM32CUBEMX_FILE) | grep PCC.PartNumber | awk -F= '{ print $$2 }')
 FEATURES         += $(shell cat $(STM32CUBEMX_FILE) | grep Mcu\.IP[0-9]\*= | awk -F= '{ print $$2 }' | sed 's/[0-9]*$$//g')
 
-LINK_FLASH_START  = 0x08000000
-LINK_RAM_START    = 0x20000000
+LINK_FLASH_START  ?= 0x08000000
+LINK_RAM_START    ?= 0x20000000
 
 ifeq ($(DEVICE),STM32F051K8Tx)
 DEVICE_FAMILY     = STM32F0xx
 DEVICE_TYPE       = STM32F051x8
 CPU               = -mthumb -mcpu=cortex-m0 -mfloat-abi=soft
-RAM               = 8192
-FLASH             = 65536
+RAM               ?= 8192
+FLASH             ?= 65536
 else ifeq ($(DEVICE),STM32L051K8Tx)
 DEVICE_FAMILY     = STM32L0xx
 DEVICE_TYPE       = STM32L051xx
 CPU               = -mthumb -mcpu=cortex-m0 -mfloat-abi=soft
-RAM               = 8192
-FLASH             = 65536
+RAM               ?= 8192
+FLASH             ?= 65536
 else ifeq ($(DEVICE),STM32F072RBTx)
 DEVICE_FAMILY     = STM32F0xx
 DEVICE_TYPE       = STM32F072xB
 CPU               = -mthumb -mcpu=cortex-m0
-RAM               = 16384
-FLASH             = 131072
+RAM               ?= 16384
+FLASH             ?= 131072
 else ifeq ($(DEVICE),STM32F103RBTx)
 DEVICE_FAMILY     = STM32F1xx
 DEVICE_TYPE       = STM32F103xB
 CPU               = -mthumb -mcpu=cortex-m3
-RAM               = 20480
-FLASH             = 131072
+RAM               ?= 20480
+FLASH             ?= 131072
 else ifeq ($(DEVICE),STM32F103RETx)
 DEVICE_FAMILY     = STM32F1xx
 DEVICE_TYPE       = STM32F103xE
 CPU               = -mthumb -mcpu=cortex-m3
-RAM               = 65536
-FLASH             = 524288
+RAM               ?= 65536
+FLASH             ?= 524288
 else ifeq ($(DEVICE),STM32F103CBTx)
 DEVICE_FAMILY     = STM32F1xx
 DEVICE_TYPE       = STM32F103xB
 CPU               = -mthumb -mcpu=cortex-m3
-RAM               = 20480
-FLASH             = 131072
+RAM               ?= 20480
+FLASH             ?= 131072
 else
 $(error Unhandled device $(DEVICE))
 endif
