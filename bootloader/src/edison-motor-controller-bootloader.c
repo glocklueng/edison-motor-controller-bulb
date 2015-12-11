@@ -70,7 +70,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi) {
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
-  while (1);
+  spi_process();
 }
 
 void spi_process() {
@@ -129,6 +129,9 @@ void spi_beginReceiveStartPage() {
 void spi_beginReceivePage() {
   spiState = SPI_STATE_RECEIVE_PAGE;
   memset(buffer, 0, FLASH_PAGE_SIZE);
+  for(int i=0; i<FLASH_PAGE_SIZE; i++) {
+    buffer[i] = i;
+  }
   txRxComplete = false;
   if (HAL_SPI_TransmitReceive_DMA(SPI, buffer, buffer, FLASH_PAGE_SIZE) != HAL_OK) {
     while (1);
@@ -139,9 +142,9 @@ void spi_beginReceivePage() {
 void spi_flashPage() {
   for (uint32_t pageOffset = 0; pageOffset < FLASH_PAGE_SIZE; pageOffset += WORD_SIZE) {
     uint32_t word = *((uint32_t*)(&buffer[pageOffset]));
-    if (HAL_FLASH_Program(TYPEPROGRAM_WORD, APP_ADDRESS + pageAddr + pageOffset, word) != HAL_OK) {
-      while (1);
-    }
+     if (HAL_FLASH_Program(TYPEPROGRAM_WORD, APP_ADDRESS + pageAddr + pageOffset, word) != HAL_OK) {
+       while (1);
+     }
   }
   pageAddr += FLASH_PAGE_SIZE;
 }
