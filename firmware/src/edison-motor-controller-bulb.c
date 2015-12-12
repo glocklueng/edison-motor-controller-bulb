@@ -11,6 +11,7 @@
 #include <contiki/core/sys/process.h>
 #include <contiki/core/sys/etimer.h>
 #include <lis3mdl/lis3mdl.h>
+#include <core_cmFunc.h>
 #include "edison-motor-controller-bulb.h"
 
 #define SPI_STATE_RX_COMMAND       0x01
@@ -56,7 +57,6 @@ volatile EdisonMotorCommandStatusResponse status = {
 
 EdisonMotorCommandDrive driveCommand;
 
-void spi_setup();
 void spi_process();
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB);
 void motor_stop();
@@ -101,6 +101,8 @@ void setup() {
   debug_setup();
   printf("setup complete\n");
   printf("> ");
+
+  __enable_irq();
 }
 
 void loop() {

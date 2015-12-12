@@ -30,7 +30,7 @@ FlashHeader flashHeader;
 uint8_t buffer[FLASH_PAGE_SIZE];
 uint8_t spiState;
 uint32_t pageAddr;
-bool txRxComplete;
+volatile bool txRxComplete;
 
 void jumpToUserCode();
 void assertIrq();
@@ -49,6 +49,8 @@ void setup() {
     jumpToUserCode();
     return;
   }
+
+  __enable_irq();
 
   spiState = SPI_STATE_RECV_HEADER;
   uint8_t* rxData = (uint8_t*)&flashHeader;
@@ -163,8 +165,7 @@ void jumpToUserCode() {
   funcEntryPtr usrMain = (funcEntryPtr) jumpAddr;
 
   HAL_FLASH_Lock();
-  __set_PRIMASK(1);
-  HAL_RCC_DeInit();
+  __disable_irq();
   __set_MSP(*(uint32_t*) APP_ADDRESS);
   usrMain();
 }
