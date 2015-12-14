@@ -16,5 +16,6 @@ SRCS = \
 	libs/utils/trig_int16.c \
 	libs/lis3mdl/lis3mdl.c
 SSRCS =
-LINK_FLASH_START = 0x08003000
+LINK_FLASH_START       = 0x08003000
 FLASH = 53248
+LINK_DATA_EEPROM_START = 0x08080080
