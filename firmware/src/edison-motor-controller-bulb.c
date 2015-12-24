@@ -23,6 +23,7 @@
 static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 #define MOTOR_LEFT  0
 #define MOTOR_RIGHT 1
+#define MOTOR_MIN_SPEED 50
 
 //PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
@@ -55,7 +56,7 @@ volatile EdisonMotorCommandStatusResponse status = {
   .distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET
 };
 
-EdisonMotorCommandDrive driveCommand;
+volatile EdisonMotorCommandDrive driveCommand;
 
 void spi_process();
 void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB);
@@ -65,6 +66,8 @@ uint32_t speedToCompareValue(int16_t speed);
 void spi_clear();
 HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading);
 int16_t compass_scale(int32_t value, int32_t min, int32_t max);
+int16_t reduceSpeed(int16_t speed, uint16_t percent);
+void reduceDriveCommandSpeed(uint16_t percent);
 
 void setup() {
   printf("setup\n");
@@ -244,23 +247,38 @@ void motor_stop() {
   HAL_TIM_Base_Stop_IT(MOTOR_LEFT_PWM_HANDLE);
   HAL_TIM_OC_Stop_IT(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
   HAL_TIM_OC_Stop_IT(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
-  driveCommand.speedLeft = 0;
-  driveCommand.distanceLeft = EDISON_MOTOR_DISTANCE_NOT_SET;
-  driveCommand.speedRight = 0;
-  driveCommand.distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET;
-  driveCommand.rotation = EDISON_MOTOR_ROTATION_NOT_SET;
-  printf("motor_stop\n");
+  status.speedLeft = driveCommand.speedLeft = 0;
+  status.distanceLeft = driveCommand.distanceLeft = EDISON_MOTOR_DISTANCE_NOT_SET;
+  status.speedRight = driveCommand.speedRight = 0;
+  status.distanceRight = driveCommand.distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET;
+  status.rotation = driveCommand.rotation = EDISON_MOTOR_ROTATION_NOT_SET;
+  //printf("motor_stop\n");
 }
 
 void motor_processDriveCommand() {
+  // cancel current interrupts to prevent speed jumping
+  HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_RESET);
+  HAL_TIM_Base_Stop_IT(MOTOR_LEFT_PWM_HANDLE);
+  HAL_TIM_OC_Stop_IT(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL);
+  HAL_TIM_OC_Stop_IT(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL);
+
+  if (abs(driveCommand.speedLeft) < MOTOR_MIN_SPEED && abs(driveCommand.speedRight) < MOTOR_MIN_SPEED) {
+    motor_stop();
+    return;
+  }
+  if (driveCommand.rotation == EDISON_MOTOR_ROTATION_NOT_SET && driveCommand.distanceLeft == EDISON_MOTOR_DISTANCE_NOT_SET && driveCommand.distanceRight == EDISON_MOTOR_DISTANCE_NOT_SET) {
+    motor_stop();
+    return;
+  }
+
   status.speedLeft = driveCommand.speedLeft;
   status.distanceLeft = driveCommand.distanceLeft;
   status.speedRight = driveCommand.speedRight;
   status.distanceRight = driveCommand.distanceRight;
   status.rotation = driveCommand.rotation;
 
-  HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_RESET : GPIO_PIN_SET);
-  HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
   __HAL_TIM_SetCompare(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
   __HAL_TIM_SetCompare(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
@@ -271,11 +289,11 @@ void motor_processDriveCommand() {
 
   HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_SET);
 
-  printf("speedLeft: %d\n", driveCommand.speedLeft);
-  printf("distanceLeft: %d\n", driveCommand.distanceLeft);
-  printf("speedRight: %d\n", driveCommand.speedRight);
-  printf("distanceRight: %d\n", driveCommand.distanceRight);
-  printf("rotation: %d\n", driveCommand.rotation);
+  //printf("speedLeft: %d\n", driveCommand.speedLeft);
+  //printf("distanceLeft: %d\n", driveCommand.distanceLeft);
+  //printf("speedRight: %d\n", driveCommand.speedRight);
+  //printf("distanceRight: %d\n", driveCommand.distanceRight);
+  //printf("rotation: %d\n", driveCommand.rotation);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
@@ -375,10 +393,14 @@ PROCESS_THREAD(compass_update, ev, data) {
         if (status.speedLeft > status.speedRight) {
           if (status.rotation < 0) {
             motor_stop();
+          } else if (status.rotation < 10) {
+	    reduceDriveCommandSpeed(25);
           }
         } else {
           if (status.rotation > 0) {
             motor_stop();
+          } if (status.rotation > -10) {
+	    reduceDriveCommandSpeed(25);
           }
         }
       }
@@ -420,4 +442,18 @@ int16_t compass_scale(int32_t value, int32_t min, int32_t max) {
   return value;
 }
 
+int16_t reduceSpeed(int16_t speed, uint16_t percent) {
+  int32_t s = ((int32_t)speed * (100 - percent)) / 100;
+  if (s < 0 && s > -MOTOR_MIN_SPEED) {
+    s = -MOTOR_MIN_SPEED;
+  } else if (s > 0 && s < MOTOR_MIN_SPEED) {
+    s = MOTOR_MIN_SPEED;
+  }
+  return s;
+}
 
+void reduceDriveCommandSpeed(uint16_t percent) {
+  driveCommand.speedLeft = reduceSpeed(driveCommand.speedLeft, percent);
+  driveCommand.speedRight = reduceSpeed(driveCommand.speedRight, percent);
+  motor_processDriveCommand();
+}

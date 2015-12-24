@@ -7,7 +7,7 @@
 #define DEBUG_UART       huart2
 #define SPI              hspi1
 #define MAX_TIMEOUT      0xffff
-#define COMPASS_TIMER_MS 1000
+#define COMPASS_TIMER_MS 20
 
 #define MOTOR_LEFT_PWM_HANDLE      (&htim2)
 #define MOTOR_LEFT_PWM_CHANNEL     TIM_CHANNEL_1
