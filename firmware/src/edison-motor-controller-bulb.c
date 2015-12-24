@@ -23,7 +23,6 @@
 static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 #define MOTOR_LEFT  0
 #define MOTOR_RIGHT 1
-#define MOTOR_MIN_SPEED 50
 
 //PROCESS(watchdog_reset, "Watchdog Reset");
 PROCESS(compass_update, "Compass Update");
@@ -391,16 +390,12 @@ PROCESS_THREAD(compass_update, ev, data) {
       if (status.rotation != EDISON_MOTOR_ROTATION_NOT_SET) {
         status.rotation += smallestDeltaBetweenAnglesInDegrees(heading, status.heading);
         if (status.speedLeft > status.speedRight) {
-          if (status.rotation < 0) {
+          if (status.rotation < 2) {
             motor_stop();
-          } else if (status.rotation < 10) {
-	    reduceDriveCommandSpeed(25);
           }
         } else {
-          if (status.rotation > 0) {
+          if (status.rotation > -2) {
             motor_stop();
-          } if (status.rotation > -10) {
-	    reduceDriveCommandSpeed(25);
           }
         }
       }
