@@ -13,7 +13,7 @@ SRCS = \
 	libs/utils/syscalls.c \
 	libs/utils/time.c \
 	libs/utils/utils.c \
-	libs/utils/trig_int16.c \
+	libs/utils/math.c \
 	libs/lis3mdl/lis3mdl.c
 SSRCS =
 LINK_FLASH_START       = 0x08003000

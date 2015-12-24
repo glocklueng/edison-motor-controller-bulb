@@ -7,7 +7,7 @@
 #include "platform_config.h"
 #include <utils/debug.h>
 #include <utils/utils.h>
-#include <utils/trig_int16.h>
+#include <utils/math.h>
 #include <contiki/core/sys/process.h>
 #include <contiki/core/sys/etimer.h>
 #include <lis3mdl/lis3mdl.h>
@@ -39,7 +39,7 @@ int16_t debug_speedLeft;
 int16_t debug_speedRight;
 uint16_t debug_distanceLeft;
 uint16_t debug_distanceRight;
-uint16_t debug_targetHeading;
+uint16_t debug_rotation;
 
 EdisonSocketConfig edisonSocketConfig = {
   .version = EDISON_SOCKET_VERSION,
@@ -47,8 +47,8 @@ EdisonSocketConfig edisonSocketConfig = {
 };
 
 volatile EdisonMotorCommandStatusResponse status = {
-  .heading = EDISON_MOTOR_TARGET_HEADING_NOT_SET,
-  .targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET,
+  .heading = EDISON_MOTOR_UNKNOWN_HEADING,
+  .rotation = EDISON_MOTOR_ROTATION_NOT_SET,
   .speedLeft = 0,
   .distanceLeft = EDISON_MOTOR_DISTANCE_NOT_SET,
   .speedRight = 0,
@@ -68,7 +68,7 @@ int16_t compass_scale(int32_t value, int32_t min, int32_t max);
 
 void setup() {
   printf("setup\n");
-  
+
   HAL_SPI_DMAStop(&SPI);
 
   lastCommand = EDISON_SOCKET_CMD_NOT_SET;
@@ -81,8 +81,8 @@ void setup() {
   debug_speedRight = 100;
   debug_distanceLeft = 200;
   debug_distanceRight = 200;
-  debug_targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET;
-  
+  debug_rotation = EDISON_MOTOR_UNKNOWN_HEADING;
+
   //HAL_IWDG_Start(&hiwdg);
   LIS3MDL_setup(&compass, &hi2c1, LIS3MDL_ADDRESS1);
   LIS3MDL_reset(&compass);
@@ -205,7 +205,7 @@ PROCESS_THREAD(motor_update, ev, data) {
     pinStateA = HAL_GPIO_ReadPin(PIN_MOTORRCHA_PORT, PIN_MOTORRCHA_PIN);
     pinStateB = HAL_GPIO_ReadPin(PIN_MOTORRCHB_PORT, PIN_MOTORRCHB_PIN);
     motor_processPinChange(MOTOR_RIGHT, pinStateA, pinStateB);
-    
+
     PROCESS_PAUSE();
   }
 
@@ -226,10 +226,10 @@ void motor_processPinChange(uint8_t motor, GPIO_PinState chA, GPIO_PinState chB)
     int8_t move = ENCODER_STATES[newState];
     if (move != 0) {
       statusDistance--;
-      if(motor == MOTOR_LEFT) {
-	status.distanceLeft = statusDistance;
-      }else{
-	status.distanceRight = statusDistance;
+      if (motor == MOTOR_LEFT) {
+        status.distanceLeft = statusDistance;
+      } else {
+        status.distanceRight = statusDistance;
       }
       if (statusDistance == 0) {
         motor_stop();
@@ -248,7 +248,7 @@ void motor_stop() {
   driveCommand.distanceLeft = EDISON_MOTOR_DISTANCE_NOT_SET;
   driveCommand.speedRight = 0;
   driveCommand.distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET;
-  driveCommand.targetHeading = EDISON_MOTOR_TARGET_HEADING_NOT_SET;
+  driveCommand.rotation = EDISON_MOTOR_ROTATION_NOT_SET;
   printf("motor_stop\n");
 }
 
@@ -257,7 +257,7 @@ void motor_processDriveCommand() {
   status.distanceLeft = driveCommand.distanceLeft;
   status.speedRight = driveCommand.speedRight;
   status.distanceRight = driveCommand.distanceRight;
-  status.targetHeading = driveCommand.targetHeading;
+  status.rotation = driveCommand.rotation;
 
   HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_RESET : GPIO_PIN_SET);
   HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
@@ -275,18 +275,18 @@ void motor_processDriveCommand() {
   printf("distanceLeft: %d\n", driveCommand.distanceLeft);
   printf("speedRight: %d\n", driveCommand.speedRight);
   printf("distanceRight: %d\n", driveCommand.distanceRight);
-  printf("targetHeading: %d\n", driveCommand.targetHeading);
+  printf("rotation: %d\n", driveCommand.rotation);
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   HAL_GPIO_WritePin(PIN_MOTORLPWM_PORT, PIN_MOTORLPWM_PIN, GPIO_PIN_SET);
   HAL_GPIO_WritePin(PIN_MOTORRPWM_PORT, PIN_MOTORRPWM_PIN, GPIO_PIN_SET);
 }
 
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
-  if(htim->Channel == MOTOR_LEFT_PWM_IT_CHANNEL) {
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim) {
+  if (htim->Channel == MOTOR_LEFT_PWM_IT_CHANNEL) {
     HAL_GPIO_WritePin(PIN_MOTORLPWM_PORT, PIN_MOTORLPWM_PIN, GPIO_PIN_RESET);
-  } else if(htim->Channel == MOTOR_RIGHT_PWM_IT_CHANNEL) {
+  } else if (htim->Channel == MOTOR_RIGHT_PWM_IT_CHANNEL) {
     HAL_GPIO_WritePin(PIN_MOTORRPWM_PORT, PIN_MOTORRPWM_PIN, GPIO_PIN_RESET);
   }
 }
@@ -305,7 +305,7 @@ void debug_processLine(const char* line) {
     while (1);
   } else if (strcmp(line, "status") == 0) {
     printf("heading: %d\n", status.heading);
-    printf("targetHeading: %d\n", status.targetHeading);
+    printf("rotation: %d\n", status.rotation);
     printf("speedLeft: %d\n", status.speedLeft);
     printf("distanceLeft: %d\n", status.distanceLeft);
     printf("speedRight: %d\n", status.speedRight);
@@ -325,7 +325,7 @@ void debug_processLine(const char* line) {
     driveCommand.distanceLeft = debug_distanceLeft;
     driveCommand.speedRight = debug_speedRight;
     driveCommand.distanceRight = debug_distanceRight;
-    driveCommand.targetHeading = debug_targetHeading;
+    driveCommand.rotation = debug_rotation;
     motor_processDriveCommand();
   } else {
     printf("invalid debug command: %s\n", line);
@@ -370,6 +370,18 @@ PROCESS_THREAD(compass_update, ev, data) {
         printf("could not read XY heading: %d\n", s);
         continue;
       }
+      if (status.rotation != EDISON_MOTOR_ROTATION_NOT_SET) {
+        status.rotation += smallestDeltaBetweenAnglesInDegrees(heading, status.heading);
+        if (status.speedLeft > status.speedRight) {
+          if (status.rotation < 0) {
+            motor_stop();
+          }
+        } else {
+          if (status.rotation > 0) {
+            motor_stop();
+          }
+        }
+      }
       status.heading = heading;
       //printf("heading: %d\n", status.heading);
     }
@@ -395,7 +407,7 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
 
   scaledX = compass_scale(x, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X]);
   scaledY = compass_scale(y, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y]);
-  
+
   *heading = 360 - trig_int16_atan2deg(scaledY, scaledX);
   //printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
 
@@ -407,4 +419,5 @@ int16_t compass_scale(int32_t value, int32_t min, int32_t max) {
   value = value * (20000 / (max - min)); // scale from -10000 to 10000
   return value;
 }
+
 

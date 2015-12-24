@@ -7,12 +7,13 @@
 #define EDISON_MOTOR_CMD_STATUS (EDISON_SOCKET_CMD_USER+0x00)
 #define EDISON_MOTOR_CMD_DRIVE  (EDISON_SOCKET_CMD_USER+0x01)
 
-#define EDISON_MOTOR_DISTANCE_NOT_SET        0xffff
-#define EDISON_MOTOR_TARGET_HEADING_NOT_SET  0xffff
+#define EDISON_MOTOR_DISTANCE_NOT_SET  0xffff
+#define EDISON_MOTOR_ROTATION_NOT_SET  0x7fff
+#define EDISON_MOTOR_UNKNOWN_HEADING   0xffff
 
 typedef struct {
   uint16_t heading;
-  uint16_t targetHeading;
+  int16_t rotation;
   int16_t speedLeft;
   uint16_t distanceLeft;
   int16_t speedRight;
@@ -27,7 +28,7 @@ typedef struct {
   uint16_t distanceLeft;
   int16_t speedRight;
   uint16_t distanceRight;
-  uint16_t targetHeading;
+  int16_t rotation;
 } EdisonMotorCommandDrive;
 
 #endif
