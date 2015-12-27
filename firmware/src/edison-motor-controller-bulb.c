@@ -20,6 +20,9 @@
 #define SPI_STATE_ERROR            0x04
 #define SPI_STATE_COMPLETE         0x05
 
+#define EEPROM_SETTINGS_ADDRESS    (DATA_EEPROM_BASE + 0x0000)
+#define SETTINGS_SIGNATURE         0x6964795b
+
 //#define DEBUG_OUT(format, ...) printf("%s:%d: " format, __FILE__, __LINE__, __VA_ARGS__)
 #define DEBUG_OUT(format, ...)
 
@@ -33,10 +36,17 @@ PROCESS(motor_update, "Motor Update");
 
 LIS3MDL compass;
 
+typedef struct {
+  uint32_t signature;
+  int16_t compassMin[3];
+  int16_t compassMax[3];
+} EdisonMotorEEPROM;
+
 volatile uint8_t lastCommand;
 volatile uint8_t spiState;
 volatile uint8_t lastMotorState[2];
 volatile GPIO_PinState lastSpiCsState;
+volatile EdisonMotorEEPROM eepromSettings;
 
 int16_t debug_speedLeft;
 int16_t debug_speedRight;
@@ -70,6 +80,9 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading);
 int16_t compass_scale(int32_t value, int32_t min, int32_t max);
 int16_t reduceSpeed(int16_t speed, uint16_t percent);
 void reduceDriveCommandSpeed(uint16_t percent);
+void clearCalibration();
+void loadSettings();
+void saveSettings();
 
 void setup() {
   DEBUG_OUT("setup\n");
@@ -97,6 +110,9 @@ void setup() {
   LIS3MDL_setScale(&compass, LIS3MDL_SCALE_4_GAUSS);
   LIS3MDL_setMode(&compass, LIS3MDL_MODE_CONTINUOUS);
 
+  // must come after compass initialized because it changes the compass state
+  loadSettings();
+  
   process_init();
   process_start(&etimer_process, NULL);
   //process_start(&watchdog_reset, NULL);
@@ -165,6 +181,12 @@ void spi_process() {
     } else if (lastCommand == EDISON_MOTOR_CMD_STATUS) {
       spiState = SPI_STATE_TX_DATA;
       HAL_SPI_Transmit_DMA(&SPI, (uint8_t*)&status, sizeof(status));
+    } else if (lastCommand == EDISON_MOTOR_CMD_CLEAR_SETTINGS) {
+      spiState = SPI_STATE_COMPLETE;
+      clearCalibration();
+    } else if (lastCommand == EDISON_MOTOR_CMD_SAVE_SETTINGS) {
+      spiState = SPI_STATE_COMPLETE;
+      saveSettings();      
     } else if (lastCommand == EDISON_MOTOR_CMD_DRIVE) {
       spiState = SPI_STATE_RX_DATA;
       HAL_SPI_Receive_DMA(&SPI, (uint8_t*)&driveCommand, sizeof(driveCommand));
@@ -457,3 +479,43 @@ void reduceDriveCommandSpeed(uint16_t percent) {
   driveCommand.speedRight = reduceSpeed(driveCommand.speedRight, percent);
   motor_processDriveCommand();
 }
+
+void clearCalibration() {
+  LIS3MDL_clearMinMax(&compass);
+  for(int axis = 0; axis < 3; axis++) {
+    eepromSettings.compassMin[axis] = 32767;
+    eepromSettings.compassMax[axis] = -32768;
+  }
+}
+
+void loadSettings() {
+  memcpy(&eepromSettings, (uint32_t*)EEPROM_SETTINGS_ADDRESS, sizeof(eepromSettings));;
+  if(eepromSettings.signature != SETTINGS_SIGNATURE) {
+    return;
+  }
+  
+  for(int axis = 0; axis < 3; axis++) {
+    compass.min[axis] = eepromSettings.compassMin[axis];
+    compass.max[axis] = eepromSettings.compassMax[axis];
+  }
+}
+
+void saveSettings() {
+  eepromSettings.signature = SETTINGS_SIGNATURE;
+  for(int axis = 0; axis < 3; axis++) {
+    eepromSettings.compassMin[axis] = compass.min[axis];
+    eepromSettings.compassMax[axis] = compass.max[axis];
+  }
+  
+  uint32_t addr = EEPROM_SETTINGS_ADDRESS;
+  uint32_t* p = &eepromSettings;
+  HAL_FLASHEx_DATAEEPROM_Unlock();
+  HAL_FLASHEx_DATAEEPROM_Erase(addr);
+  for (int i = 0; i < sizeof(eepromSettings); i += 4) {
+    HAL_FLASHEx_DATAEEPROM_Program(TYPEPROGRAM_WORD, addr, *p);
+    addr += 4;
+    p++;
+  }
+  HAL_FLASHEx_DATAEEPROM_Lock();
+}
+
