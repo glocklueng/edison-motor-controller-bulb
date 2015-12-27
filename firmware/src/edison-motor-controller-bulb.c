@@ -20,6 +20,9 @@
 #define SPI_STATE_ERROR            0x04
 #define SPI_STATE_COMPLETE         0x05
 
+//#define DEBUG_OUT(format, ...) printf("%s:%d: " format, __FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG_OUT(format, ...)
+
 static const int8_t ENCODER_STATES[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 #define MOTOR_LEFT  0
 #define MOTOR_RIGHT 1
@@ -69,7 +72,7 @@ int16_t reduceSpeed(int16_t speed, uint16_t percent);
 void reduceDriveCommandSpeed(uint16_t percent);
 
 void setup() {
-  printf("setup\n");
+  DEBUG_OUT("setup\n");
 
   HAL_SPI_DMAStop(&SPI);
 
@@ -101,8 +104,8 @@ void setup() {
   process_start(&motor_update, NULL);
 
   debug_setup();
-  printf("setup complete\n");
-  printf("> ");
+  DEBUG_OUT("setup complete\n");
+  DEBUG_OUT("> ");
 
   __enable_irq();
 }
@@ -147,11 +150,11 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi) {
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi) {
   spiState = SPI_STATE_ERROR;
-  printf("HAL_SPI_ErrorCallback 0x%02x\n", (uint8_t)HAL_SPI_GetError(hspi));
+  DEBUG_OUT("HAL_SPI_ErrorCallback 0x%02x\n", (uint8_t)HAL_SPI_GetError(hspi));
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
-  printf("HAL_UART_ErrorCallback 0x%02x\n", (uint8_t)HAL_UART_GetError(huart));
+  DEBUG_OUT("HAL_UART_ErrorCallback 0x%02x\n", (uint8_t)HAL_UART_GetError(huart));
 }
 
 void spi_process() {
@@ -167,7 +170,7 @@ void spi_process() {
       HAL_SPI_Receive_DMA(&SPI, (uint8_t*)&driveCommand, sizeof(driveCommand));
     } else {
       spiState = SPI_STATE_ERROR;
-      printf("SPI: unknown rx command 0x%02x\n", lastCommand);
+      DEBUG_OUT("SPI: unknown rx command 0x%02x\n", lastCommand);
     }
   } else if (spiState == SPI_STATE_RX_DATA) {
     if (lastCommand == EDISON_MOTOR_CMD_DRIVE) {
@@ -175,7 +178,7 @@ void spi_process() {
       motor_processDriveCommand();
     } else {
       spiState = SPI_STATE_ERROR;
-      printf("SPI: unknown state RX command data 0x%02x\n", lastCommand);
+      DEBUG_OUT("SPI: unknown state RX command data 0x%02x\n", lastCommand);
     }
   } else if (spiState == SPI_STATE_TX_DATA) {
     if (lastCommand == EDISON_SOCKET_CMD_READ_CONFIG) {
@@ -184,12 +187,12 @@ void spi_process() {
       spiState = SPI_STATE_COMPLETE;
     } else {
       spiState = SPI_STATE_ERROR;
-      printf("SPI: invalid tx command 0x%02x\n", lastCommand);
+      DEBUG_OUT("SPI: invalid tx command 0x%02x\n", lastCommand);
     }
   } else if (spiState == SPI_STATE_COMPLETE) {
   } else if (spiState == SPI_STATE_ERROR) {
   } else {
-    printf("SPI: invalid tx state 0x%02x\n", spiState);
+    DEBUG_OUT("SPI: invalid tx state 0x%02x\n", spiState);
     spiState = SPI_STATE_ERROR;
   }
 }
@@ -251,7 +254,7 @@ void motor_stop() {
   status.speedRight = driveCommand.speedRight = 0;
   status.distanceRight = driveCommand.distanceRight = EDISON_MOTOR_DISTANCE_NOT_SET;
   status.rotation = driveCommand.rotation = EDISON_MOTOR_ROTATION_NOT_SET;
-  //printf("motor_stop\n");
+  DEBUG_OUT("motor_stop\n");
 }
 
 void motor_processDriveCommand() {
@@ -279,7 +282,9 @@ void motor_processDriveCommand() {
   HAL_GPIO_WritePin(PIN_MOTORLDIR_PORT, PIN_MOTORLDIR_PIN, driveCommand.speedLeft > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
   HAL_GPIO_WritePin(PIN_MOTORRDIR_PORT, PIN_MOTORRDIR_PIN, driveCommand.speedRight > 0 ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
+  __HAL_TIM_SetCounter(MOTOR_LEFT_PWM_HANDLE, 0);
   __HAL_TIM_SetCompare(MOTOR_LEFT_PWM_HANDLE, MOTOR_LEFT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedLeft));
+  __HAL_TIM_SetCounter(MOTOR_RIGHT_PWM_HANDLE, 0);
   __HAL_TIM_SetCompare(MOTOR_RIGHT_PWM_HANDLE, MOTOR_RIGHT_PWM_CHANNEL, speedToCompareValue(driveCommand.speedRight));
 
   HAL_TIM_Base_Start_IT(MOTOR_LEFT_PWM_HANDLE);
@@ -288,11 +293,11 @@ void motor_processDriveCommand() {
 
   HAL_GPIO_WritePin(PIN_MOTOREN_PORT, PIN_MOTOREN_PIN, GPIO_PIN_SET);
 
-  //printf("speedLeft: %d\n", driveCommand.speedLeft);
-  //printf("distanceLeft: %d\n", driveCommand.distanceLeft);
-  //printf("speedRight: %d\n", driveCommand.speedRight);
-  //printf("distanceRight: %d\n", driveCommand.distanceRight);
-  //printf("rotation: %d\n", driveCommand.rotation);
+  DEBUG_OUT("speedLeft: %d\n", driveCommand.speedLeft);
+  DEBUG_OUT("distanceLeft: %d\n", driveCommand.distanceLeft);
+  DEBUG_OUT("speedRight: %d\n", driveCommand.speedRight);
+  DEBUG_OUT("distanceRight: %d\n", driveCommand.distanceRight);
+  DEBUG_OUT("rotation: %d\n", driveCommand.rotation);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
@@ -318,15 +323,15 @@ uint32_t speedToCompareValue(int16_t speed) {
 void debug_processLine(const char* line) {
   if (strlen(line) == 0) {
   } else if (strcmp(line, "testiwdg") == 0) {
-    printf("testing IWDG\n");
+    DEBUG_OUT("testing IWDG\n");
     while (1);
   } else if (strcmp(line, "status") == 0) {
-    printf("heading: %d\n", status.heading);
-    printf("rotation: %d\n", status.rotation);
-    printf("speedLeft: %d\n", status.speedLeft);
-    printf("distanceLeft: %d\n", status.distanceLeft);
-    printf("speedRight: %d\n", status.speedRight);
-    printf("distanceRight: %d\n", status.distanceRight);
+    DEBUG_OUT("heading: %d\n", status.heading);
+    DEBUG_OUT("rotation: %d\n", status.rotation);
+    DEBUG_OUT("speedLeft: %d\n", status.speedLeft);
+    DEBUG_OUT("distanceLeft: %d\n", status.distanceLeft);
+    DEBUG_OUT("speedRight: %d\n", status.speedRight);
+    DEBUG_OUT("distanceRight: %d\n", status.distanceRight);
   } else if (strcmp(line, "s") == 0 || strcmp(line, "stop") == 0) {
     motor_stop();
   } else if (strncmp(line, "sl", 2) == 0) {
@@ -345,9 +350,9 @@ void debug_processLine(const char* line) {
     driveCommand.rotation = debug_rotation;
     motor_processDriveCommand();
   } else {
-    printf("invalid debug command: %s\n", line);
+    DEBUG_OUT("invalid debug command: %s\n", line);
   }
-  printf("> ");
+  DEBUG_OUT("> ");
 }
 /*
 PROCESS_THREAD(watchdog_reset, ev, data) {
@@ -378,13 +383,13 @@ PROCESS_THREAD(compass_update, ev, data) {
 
     s = LIS3MDL_readStatus(&compass, &compassStatus);
     if (s != HAL_OK) {
-      printf("could not read compass status: %d\n", s);
+      DEBUG_OUT("could not read compass status: %d\n", s);
       continue;
     }
     if (testBits(compassStatus, LIS3MDL_STATUS_ZYXDA)) {
       s = compass_readXYHeading(&heading);
       if (s != HAL_OK) {
-        printf("could not read XY heading: %d\n", s);
+        DEBUG_OUT("could not read XY heading: %d\n", s);
         continue;
       }
       if (status.rotation != EDISON_MOTOR_ROTATION_NOT_SET) {
@@ -400,7 +405,7 @@ PROCESS_THREAD(compass_update, ev, data) {
         }
       }
       status.heading = heading;
-      //printf("heading: %d\n", status.heading);
+      DEBUG_OUT("heading: %d\n", status.heading);
     }
   }
 
@@ -426,7 +431,7 @@ HAL_StatusTypeDef compass_readXYHeading(uint16_t* heading) {
   scaledY = compass_scale(y, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y]);
 
   *heading = 360 - trig_int16_atan2deg(scaledY, scaledX);
-  //printf("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
+  DEBUG_OUT("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", x, scaledX, compass.min[LIS3MDL_AXIS_X], compass.max[LIS3MDL_AXIS_X], y, scaledY, compass.min[LIS3MDL_AXIS_Y], compass.max[LIS3MDL_AXIS_Y], *heading);
 
   return HAL_OK;
 }
