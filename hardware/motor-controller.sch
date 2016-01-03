@@ -184,10 +184,10 @@ Wire Wire Line
 Wire Wire Line
 	2700 6700 2700 7100
 NoConn ~ 2800 7000
-Text Label 2300 4900 0    60   ~ 0
+Text Label 2000 4900 0    60   ~ 0
 NRST
 Wire Wire Line
-	2600 4900 2300 4900
+	2600 4900 1800 4900
 Text Label 2300 6900 0    60   ~ 0
 NRST
 Text Label 2300 6800 0    60   ~ 0
@@ -871,7 +871,7 @@ F 3 "" H 3700 750 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3800 1300 3700 1300
+	3700 1300 3800 1300
 Wire Wire Line
 	3700 750  3700 1750
 Wire Wire Line
@@ -990,4 +990,39 @@ Wire Wire Line
 	8900 4600 8450 4600
 Text Label 8450 4600 0    60   ~ 0
 STATUS
+$Comp
+L SPST-4PIN S?
+U 1 1 56897B14
+P 1550 5000
+F 0 "S?" H 1550 5437 60  0000 C CNN
+F 1 "RESET" H 1550 5331 60  0000 C CNN
+F 2 "" H 1550 5000 60  0000 C CNN
+F 3 "" H 1550 5000 60  0000 C CNN
+F 4 "275" H 1550 5000 60  0001 C CNN "inventoryId"
+	1    1550 5000
+	1    0    0    -1  
+$EndComp
+$Comp
+L GNDPWR #PWR?
+U 1 1 56897EB7
+P 1200 5100
+F 0 "#PWR?" H 1200 5150 40  0001 C CNN
+F 1 "GNDPWR" H 1200 5020 40  0001 C CNN
+F 2 "" H 1200 5100 60  0000 C CNN
+F 3 "" H 1200 5100 60  0000 C CNN
+	1    1200 5100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 4900 1200 4900
+Wire Wire Line
+	1200 4900 1200 5100
+Wire Wire Line
+	1300 5000 1200 5000
+Connection ~ 1200 5000
+Wire Wire Line
+	1800 5000 1900 5000
+Wire Wire Line
+	1900 5000 1900 4900
+Connection ~ 1900 4900
 $EndSCHEMATC
