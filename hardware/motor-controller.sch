@@ -263,9 +263,9 @@ Text Label 6200 5900 0    60   ~ 0
 USARTTX
 Text Label 6200 5800 0    60   ~ 0
 USARTRX
-Text Label 5300 3700 2    60   ~ 0
+Text Label 5300 4400 2    60   ~ 0
 USARTRX
-Text Label 5300 3600 2    60   ~ 0
+Text Label 5300 4300 2    60   ~ 0
 USARTTX
 Wire Wire Line
 	5300 3600 4550 3600
@@ -282,7 +282,7 @@ Wire Wire Line
 	6900 4200 6450 4200
 Text Label 6450 4200 0    60   ~ 0
 NIRQ
-Text Label 5300 3500 2    60   ~ 0
+Text Label 5300 5100 2    60   ~ 0
 NIRQ
 Wire Wire Line
 	5300 3500 4550 3500
@@ -306,18 +306,16 @@ Wire Wire Line
 	6900 2400 6200 2400
 Wire Wire Line
 	6200 3000 6900 3000
-Text Label 5300 4600 2    60   ~ 0
+Text Label 5300 5200 2    60   ~ 0
 MOTOREN
-Text Label 5300 4200 2    60   ~ 0
+Text Label 5300 3400 2    60   ~ 0
 MOTORLPWM
-Text Label 5300 4300 2    60   ~ 0
+Text Label 2000 4500 0    60   ~ 0
 MOTORLDIR
-Text Label 5300 4400 2    60   ~ 0
+Text Label 5300 3500 2    60   ~ 0
 MOTORRPWM
-Text Label 5300 4500 2    60   ~ 0
+Text Label 2000 4000 0    60   ~ 0
 MOTORRDIR
-Wire Wire Line
-	5300 4200 4550 4200
 Wire Wire Line
 	4550 4300 5300 4300
 Wire Wire Line
@@ -600,16 +598,12 @@ Wire Wire Line
 	9600 2900 8900 2900
 Wire Wire Line
 	9600 3000 8900 3000
-Text Label 5300 5300 2    60   ~ 0
+Text Label 5300 5400 2    60   ~ 0
 COMPASSINT
-Text Label 5300 4900 2    60   ~ 0
+Text Label 5300 5500 2    60   ~ 0
 COMPASSDRDY
 Wire Wire Line
 	5300 4900 4550 4900
-Wire Wire Line
-	5300 5300 4550 5300
-NoConn ~ 2600 4000
-NoConn ~ 2600 4500
 $Comp
 L C C101
 U 1 1 5565203A
@@ -688,7 +682,6 @@ Connection ~ 3150 2900
 Wire Wire Line
 	3350 2850 3350 2900
 Connection ~ 3350 2900
-NoConn ~ 4550 3400
 $Comp
 L +5V #PWR019
 U 1 1 55650BE7
@@ -720,13 +713,13 @@ Wire Wire Line
 	6900 2500 6200 2500
 Wire Wire Line
 	6200 2600 6900 2600
-Text Label 5300 5100 2    60   ~ 0
+Text Label 5300 3600 2    60   ~ 0
 MOTORLCHA
-Text Label 5300 5200 2    60   ~ 0
+Text Label 5300 3700 2    60   ~ 0
 MOTORLCHB
-Text Label 5300 5400 2    60   ~ 0
+Text Label 5300 4600 2    60   ~ 0
 MOTORRCHA
-Text Label 5300 5500 2    60   ~ 0
+Text Label 5300 4500 2    60   ~ 0
 MOTORRCHB
 Wire Wire Line
 	5300 5100 4550 5100
@@ -942,4 +935,59 @@ F 3 "" H 9550 6200 60  0000 C CNN
 	1    9550 6200
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	2600 4000 2000 4000
+Wire Wire Line
+	2600 4500 2000 4500
+Wire Wire Line
+	4550 3400 5300 3400
+NoConn ~ 4550 5300
+NoConn ~ 4550 4200
+Text Label 5300 4900 2    60   ~ 0
+STATUS
+$Comp
+L LED D?
+U 1 1 5689F156
+P 9200 4800
+F 0 "D?" V 9160 4878 50  0000 L CNN
+F 1 "LED" V 9252 4878 50  0000 L CNN
+F 2 "" H 9200 4800 60  0000 C CNN
+F 3 "" H 9200 4800 60  0000 C CNN
+F 4 "177" H 9200 4800 60  0001 C CNN "inventoryId"
+	1    9200 4800
+	0    1    1    0   
+$EndComp
+$Comp
+L GNDPWR #PWR?
+U 1 1 5689F3CC
+P 9200 5000
+F 0 "#PWR?" H 9200 5050 40  0001 C CNN
+F 1 "GNDPWR" H 9200 4920 40  0001 C CNN
+F 2 "" H 9200 5000 60  0000 C CNN
+F 3 "" H 9200 5000 60  0000 C CNN
+	1    9200 5000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9200 4900 9200 5000
+$Comp
+L R R?
+U 1 1 5689F660
+P 9000 4600
+F 0 "R?" V 8845 4600 30  0000 C CNN
+F 1 "100R" V 8906 4600 30  0000 C CNN
+F 2 "" H 9000 4600 60  0000 C CNN
+F 3 "" H 9000 4600 60  0000 C CNN
+F 4 "300" H 9000 4600 60  0001 C CNN "inventoryId"
+	1    9000 4600
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	9100 4600 9200 4600
+Wire Wire Line
+	9200 4600 9200 4700
+Wire Wire Line
+	8900 4600 8450 4600
+Text Label 8450 4600 0    60   ~ 0
+STATUS
 $EndSCHEMATC
